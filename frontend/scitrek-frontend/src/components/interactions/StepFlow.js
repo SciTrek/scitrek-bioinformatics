@@ -27,7 +27,9 @@ function StepFlow({ steps, title, hint, allowJumpAll = true }) {
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             {title ? <h4 className="text-lg font-semibold">{title}</h4> : null}
-            <p className="text-xs text-gray-600">Showing all {steps.length} prompts.</p>
+            <p className="text-xs text-gray-600">
+              Showing all {steps.length} prompts. Your answers stay saved either way.
+            </p>
           </div>
           <button
             type="button"
@@ -108,8 +110,11 @@ function StepFlow({ steps, title, hint, allowJumpAll = true }) {
         ) : null}
       </div>
 
-      <p className="sr-only" aria-live="polite">
-        Step {safeIndex + 1} of {steps.length}. {doneCount} answered.
+      <p className="text-xs text-gray-600 mb-3" aria-live="polite">
+        Step {safeIndex + 1} of {steps.length}
+        {doneCount ? ` · ${doneCount} answered` : ''}
+        {' · '}
+        Switching steps only hides the other boxes — your answers stay saved.
       </p>
 
       <div className="rounded-xl border border-gray-200 bg-white p-4">

@@ -103,6 +103,30 @@ function StageDesk({
     return () => ro.disconnect();
   }, [docked]);
 
+  // When students start answering, tuck the floating player away so it cannot
+  // sit on top of radios / textareas and feel like the page "froze".
+  useEffect(() => {
+    if (!dockable) return undefined;
+    const desk = deskRef.current;
+    if (!desk) return undefined;
+
+    const dismissForAnswering = (event) => {
+      const target = event.target;
+      if (!(target instanceof Element)) return;
+      if (!desk.contains(target)) return;
+      if (target.closest('input, textarea, select, button, [role="radio"], [role="checkbox"], [contenteditable="true"]')) {
+        setDismissed(true);
+      }
+    };
+
+    desk.addEventListener('focusin', dismissForAnswering);
+    desk.addEventListener('pointerdown', dismissForAnswering);
+    return () => {
+      desk.removeEventListener('focusin', dismissForAnswering);
+      desk.removeEventListener('pointerdown', dismissForAnswering);
+    };
+  }, [dockable]);
+
   const backToStage = useCallback(() => {
     setDismissed(false);
     // Scroll the slot, not the stage — while docked the stage is `fixed` and
@@ -120,7 +144,7 @@ function StageDesk({
           ref={stageRef}
           className={
             isDocked
-              ? 'hidden lg:block fixed z-40 bottom-16 right-4 w-80 xl:w-[22rem] rounded-xl shadow-2xl ring-1 ring-gray-300 bg-white overflow-hidden'
+              ? 'hidden lg:block fixed z-30 bottom-16 right-4 w-80 xl:w-[22rem] rounded-xl shadow-2xl ring-1 ring-gray-300 bg-white overflow-hidden'
               : ''
           }
         >
@@ -181,7 +205,7 @@ function StageDesk({
         <button
           type="button"
           onClick={backToStage}
-          className="hidden lg:flex fixed z-40 bottom-16 right-4 items-center gap-2 px-3 py-2 rounded-full bg-gray-900 text-white text-xs shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+          className="hidden lg:flex fixed z-30 bottom-16 right-4 items-center gap-2 px-3 py-2 rounded-full bg-gray-900 text-white text-xs shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
         >
           <i className="fa-solid fa-arrow-up" aria-hidden="true" />
           Back to {mediaTitle || 'the media'}
