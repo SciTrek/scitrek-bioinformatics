@@ -31,26 +31,25 @@ function CategorizeItems({ items, categories, values, onChange, legend, hint, no
                     112x96 thumbnail rendered it as an unreadable smudge, so it
                     keeps the card's 2:3 shape and opens full size on tap. */}
                 {item.image ? (
-                  <button
-                    type="button"
-                    onClick={onImageClick ? () => onImageClick(item) : undefined}
-                    disabled={!onImageClick}
-                    aria-label={onImageClick ? `Open larger view of ${item.imageAlt || item.label}` : undefined}
-                    className="group relative w-32 md:w-40 shrink-0 self-start rounded-lg overflow-hidden bg-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400 disabled:cursor-default"
-                  >
+                  <div className="relative w-32 md:w-40 shrink-0 self-start rounded-lg overflow-hidden bg-white border border-gray-100">
                     <img
                       src={item.image}
                       alt={item.imageAlt || ''}
-                      className="w-full aspect-[2/3] object-contain"
+                      className="w-full aspect-[2/3] object-contain pointer-events-none"
                       loading="lazy"
                     />
                     {onImageClick ? (
-                      <span className="absolute bottom-1 right-1 rounded bg-gray-900/70 text-white text-[10px] px-1.5 py-0.5 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100">
+                      <button
+                        type="button"
+                        onClick={() => onImageClick(item)}
+                        aria-label={`Open larger view of ${item.imageAlt || item.label}`}
+                        className="absolute bottom-1 right-1 rounded bg-gray-900/80 text-white text-[11px] px-2 py-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-primary-400"
+                      >
                         <i className="fa-solid fa-magnifying-glass-plus mr-1" aria-hidden="true" />
                         Zoom
-                      </span>
+                      </button>
                     ) : null}
-                  </button>
+                  </div>
                 ) : null}
 
                 <div className="flex-1 min-w-0">
