@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SciTrek Bioinformatics — Teacher &amp; Mentor Guide</title>
+  <style>
+    :root {
+      --ink: #17313a;
+      --muted: #4d646c;
+      --teal: #1f7a8c;
+      --teal-soft: #e8f4f6;
+      --amber: #f2a400;
+      --paper: #fffdf8;
+      --line: #d7e2e6;
+      --ok: #1f6b4a;
+      --warn-bg: #fff6e8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top right, rgba(242, 164, 0, 0.14), transparent 26rem),
+        linear-gradient(180deg, #f7fbfd 0%, var(--paper) 40%, #ffffff 100%);
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    main {
+      max-width: 46rem;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3.5rem;
+    }
+
+    header {
+      border-bottom: 3px solid var(--teal);
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.25rem;
+    }
+
+    .kicker {
+      color: var(--teal);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin: 0 0 0.4rem;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      line-height: 1.15;
+      margin: 0 0 0.75rem;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin: 0;
+    }
+
+    h2 {
+      color: var(--teal);
+      font-size: 1.25rem;
+      margin: 2rem 0 0.75rem;
+    }
+
+    p, li { font-size: 1.02rem; }
+
+    ol, ul { padding-left: 1.25rem; }
+
+    li + li { margin-top: 0.45rem; }
+
+    a { color: var(--teal); font-weight: 700; }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      margin: 1rem 0;
+      padding: 1rem 1.1rem;
+    }
+
+    .example {
+      background: var(--teal-soft);
+      border-left: 4px solid var(--teal);
+    }
+
+    .why {
+      background: var(--warn-bg);
+      border-left: 4px solid var(--amber);
+    }
+
+    .ok { color: var(--ok); font-weight: 700; }
+    .no { color: #9b2c2c; font-weight: 700; }
+
+    code, .mono {
+      background: #eef3f5;
+      border-radius: 6px;
+      font-family: "Courier New", monospace;
+      font-size: 0.95em;
+      padding: 0.1em 0.35em;
+    }
+
+    .checklist {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .checklist li {
+      align-items: flex-start;
+      display: flex;
+      gap: 0.55rem;
+    }
+
+    .checklist li::before {
+      content: "☐";
+      color: var(--teal);
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-top: 2.5rem;
+      padding-top: 1rem;
+    }
+
+    @media print {
+      body { background: #fff; }
+      main { padding: 0; }
+      a { text-decoration: none; }
+      .card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="kicker">SciTrek Bioinformatics</p>
+      <h1>Teacher &amp; Mentor Guide</h1>
+      <p class="lead">
+        How to run a class session: help students create accounts, keep the room
+        moving, and review student work. Pair this with the student login handout.
+      </p>
+    </header>
+
+    <section>
+      <h2>1. Links you need</h2>
+      <ul>
+        <li>
+          <strong>Student site:</strong>
+          <a href="https://bioinformatics-mod.sci-trek.org">https://bioinformatics-mod.sci-trek.org</a>
+        </li>
+        <li>
+          <strong>Staff / mentor admin:</strong>
+          <a href="https://bioinformatics-mod.sci-trek.org/admin/">https://bioinformatics-mod.sci-trek.org/admin/</a>
+        </li>
+        <li>
+          <strong>Student handout:</strong>
+          share <span class="mono">docs/student-login-guide.html</span> (or the printed PDF)
+        </li>
+      </ul>
+      <div class="card why">
+        <p>
+          Mentor/teacher accounts are created by SciTrek staff. Use the username and
+          password you were given — do not invent a student-style account for mentoring.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>2. Before class checklist</h2>
+      <ul class="checklist">
+        <li>Confirm the classroom code students should enter (example: <span class="mono">1001</span>)</li>
+        <li>Confirm Days 1–5 modules are visible for that classroom (ask SciTrek if a day is missing)</li>
+        <li>Print or share the student login guide</li>
+        <li>Write the username/password pattern on the board</li>
+        <li>Test one mentor admin login and one sample student login</li>
+        <li>Know who to text/email if the site is down or modules are blank</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>3. Student username &amp; password pattern (classroom convention)</h2>
+      <p>
+        This is a shared classroom format to make accounts easy to remember and easy
+        for mentors to help recover. It is <strong>not</strong> enforced by the website code.
+      </p>
+
+      <div class="card example">
+        <p><strong>Username:</strong> <span class="mono">P#G#FirstnameLastname</span></p>
+        <p><strong>Password:</strong> <span class="mono">SciTrek-P#G#Firstname!</span></p>
+        <p><strong>Example that works:</strong></p>
+        <ul>
+          <li>Username: <span class="mono">P1G1AndySubramanian</span></li>
+          <li>Password: <span class="mono">SciTrek-P1G1Andy!</span></li>
+          <li>Classroom: <span class="mono">1001</span> <em>(or the code SciTrek gives your site)</em></li>
+        </ul>
+        <p>
+          <strong>Important:</strong> Students should not use the username itself as the
+          password. The site rejects passwords that are too similar to the username.
+        </p>
+      </div>
+
+      <p class="ok">Board script you can say out loud:</p>
+      <ol>
+        <li>“Username is P, your period, G, your group, then FirstnameLastname with no spaces.”</li>
+        <li>“Password is SciTrek-dash-P-period-G-group-Firstname-exclamation point.”</li>
+        <li>“Classroom name is the code on the board.”</li>
+      </ol>
+    </section>
+
+    <section>
+      <h2>4. First 10 minutes of class (signup flow)</h2>
+      <ol>
+        <li>Open the student site on the projector.</li>
+        <li>Click <strong>Sign Up</strong> and walk through one example account.</li>
+        <li>Have students create accounts using the pattern above.</li>
+        <li>Once signed up, they can use <strong>Sign In</strong> next time with the same credentials.</li>
+        <li>If a student already has an account, they should Sign In — not create a second account.</li>
+      </ol>
+      <div class="card why">
+        <p>
+          <strong>Guest mode:</strong> “Continue as Guest” is only for demos. Guest work
+          may not stay with a real student identity. For class credit / mentoring, students
+          should create real accounts.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Common student problems (and what to say)</h2>
+      <ul>
+        <li>
+          <strong>“Sign up failed” / password too weak:</strong><br />
+          Have them use <span class="mono">SciTrek-P#G#Firstname!</span>. Short or common
+          passwords (like <span class="mono">password</span>) are blocked on purpose.
+        </li>
+        <li>
+          <strong>“Too many signup attempts” / throttled:</strong><br />
+          The school network may be temporarily limited after many failed tries. Wait
+          15–20 minutes, then have each stuck student try <em>once</em> with the correct format.
+        </li>
+        <li>
+          <strong>Classroom does not exist:</strong><br />
+          Re-check the classroom code spelling with SciTrek staff. Students must type it exactly.
+        </li>
+        <li>
+          <strong>Username already taken:</strong><br />
+          Confirm period/group, or add a middle initial
+          (example: <span class="mono">P1G1AndyMSubramanian</span>).
+        </li>
+        <li>
+          <strong>Days/modules are blank after login:</strong><br />
+          Modules must be assigned/released for that classroom. Contact SciTrek staff to seed
+          or release the day modules — students cannot fix this themselves.
+        </li>
+        <li>
+          <strong>Forgot password:</strong><br />
+          There is no self-serve reset yet. Rebuild from the class pattern, or ask SciTrek
+          staff to reset the account in admin.
+        </li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>6. During the activity</h2>
+      <ul>
+        <li>Students work in Days 1–5 on the student site after login.</li>
+        <li>Answers usually autosave — if a control looks frozen, try scrolling/closing any zoomed image overlay, then refresh.</li>
+        <li>Encourage students to keep username/password on a sticky note for this class only if your school policy allows it.</li>
+        <li>Circulate by period/group using the username pattern so you can find who needs help quickly.</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>7. How mentors review student work</h2>
+      <p>
+        Mentors with staff access use the admin site (not the student workbook screens):
+      </p>
+      <ol>
+        <li>Go to
+          <a href="https://bioinformatics-mod.sci-trek.org/admin/">https://bioinformatics-mod.sci-trek.org/admin/</a>
+        </li>
+        <li>Sign in with your mentor/staff credentials from SciTrek.</li>
+        <li>
+          To see saved answers, open <strong>Student responses</strong>
+          (search by student username, for example <span class="mono">P1G1AndySubramanian</span>).
+        </li>
+        <li>
+          To see quiz results, open <strong>Quiz attempts</strong>.
+        </li>
+        <li>
+          To confirm a classroom’s days exist, open <strong>Modules</strong> and filter by classroom.
+        </li>
+      </ol>
+      <div class="card example">
+        <p>
+          Tip: because usernames follow <span class="mono">P#G#FirstnameLastname</span>,
+          you can search admin by period/group prefix (for example <span class="mono">P1G1</span>)
+          to review one table group together.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>8. Why we ask students for longer passwords</h2>
+      <div class="card why">
+        <p>
+          Student accounts hold workbook answers and progress. Short/common passwords are
+          easy to guess, which can let someone open another student’s work or disrupt the
+          activity. The longer class pattern still stays memorable for teens while meeting
+          the site’s security checks.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>9. When to escalate to SciTrek staff</h2>
+      <ul>
+        <li>Classroom code is missing or wrong</li>
+        <li>Modules/days do not appear for the whole class</li>
+        <li>Mentor admin login does not work</li>
+        <li>Site is down or login page will not load</li>
+        <li>You need a password reset for a student who cannot recover via the pattern</li>
+      </ul>
+      <p>
+        When escalating, include: school/site name, classroom code, approximate time,
+        and 1–2 example student usernames (never send student passwords over email if you can avoid it).
+      </p>
+    </section>
+
+    <section>
+      <h2>10. Mentor quick checklist</h2>
+      <ul class="checklist">
+        <li>Classroom code is on the board</li>
+        <li>Username/password pattern is on the board</li>
+        <li>Student handout is shared</li>
+        <li>I can log into admin</li>
+        <li>I can find Student responses for a test username</li>
+        <li>I know who to contact if modules are missing</li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>
+        Related student handout: <span class="mono">docs/student-login-guide.html</span><br />
+        Student site:
+        <a href="https://bioinformatics-mod.sci-trek.org">bioinformatics-mod.sci-trek.org</a>
+        · Admin:
+        <a href="https://bioinformatics-mod.sci-trek.org/admin/">/admin/</a>
+      </p>
+    </footer>
+  </main>
+</body>
+</html>
