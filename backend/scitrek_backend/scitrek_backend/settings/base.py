@@ -178,7 +178,9 @@ REST_FRAMEWORK = {
         'quiz':     '20/minute',   # scoped to QuizAttemptUpsert
         'token_obtain': '10/minute',
         'token_refresh': '30/minute',
-        'signup': '5/hour',
+        # Classroom demos often share a school NAT IP; keep abuse protection
+        # without locking out a whole lab after a few weak-password retries.
+        'signup': '30/hour',
         'guest_login': '10/hour',
     },
 

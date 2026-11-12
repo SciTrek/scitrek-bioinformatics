@@ -112,6 +112,22 @@ describe('LoginPage', () => {
     expect(message).toMatch(/sciTrek-classroom-2026!/i);
   });
 
+  test('formatSignupError turns throttle waits into plain-language minutes', () => {
+    const message = formatSignupError({
+      response: {
+        status: 429,
+        data: {
+          detail: 'Request was throttled. Expected available in 1104 seconds.',
+          wait: 1104,
+        },
+      },
+    });
+
+    expect(message).toMatch(/too many signup attempts/i);
+    expect(message).toMatch(/about 19 minutes/i);
+    expect(message).toMatch(/sciTrek-classroom-2026!/i);
+  });
+
   test('sign-up rejects mismatched passwords before API call', async () => {
     render(<LoginPage />);
 

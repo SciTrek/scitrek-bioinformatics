@@ -26,7 +26,8 @@
   directly instead of returning a 301 that would fail the check. Those views
   return only a liveness/readiness status.
 - Redis-backed throttles are shared across Gunicorn workers. Login, refresh,
-  signup, and guest creation use distinct rates.
+  signup (`30/hour`), and guest creation use distinct rates. Failed signup
+  attempts still count, so weak-password retries can temporarily lock an IP.
 - Guest creation and public signup are disabled by production-safe defaults.
   Guest access can target only the configured demo classroom. Do not enable
   public signup until the deployment has an approved opaque join-code or
