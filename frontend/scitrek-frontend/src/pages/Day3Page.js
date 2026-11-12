@@ -477,11 +477,16 @@ const Day3Page = () => {
   };
 
   // lightweight nested setter with autosave debounce (~2s)
-  const setField = (path, value) => {
+  const applyFields = (mutations) => {
     setAnswersData((prev) => {
-      const clone = structuredClone(prev);
-      // eslint-disable-next-line no-new-func
-      new Function('obj', 'value', `obj.${path} = value;`)(clone, value);
+      const clone =
+        typeof structuredClone === 'function'
+          ? structuredClone(prev)
+          : JSON.parse(JSON.stringify(prev));
+      mutations.forEach(([path, value]) => {
+        // eslint-disable-next-line no-new-func
+        new Function('obj', 'value', `obj.${path} = value;`)(clone, value);
+      });
       return clone;
     });
     setDirty(true);
@@ -497,11 +502,30 @@ const Day3Page = () => {
     }, 2000);
   };
 
+  const setField = (path, value) => applyFields([[path, value]]);
+
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
     };
   }, []);
+
+  // Escape / browser-back close for the card lightbox — without this, a zoomed
+  // card can look like the page "froze" because the close control used to sit
+  // off-screen above the image.
+  useEffect(() => {
+    if (!lightbox) return undefined;
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setLightbox(null);
+    };
+    window.addEventListener('keydown', onKeyDown);
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = prevOverflow;
+    };
+  }, [lightbox]);
 
   /**
    * Write a response-builder's parts to their additive key AND the composed
@@ -509,8 +533,10 @@ const Day3Page = () => {
    * keeps reading a plain readable answer.
    */
   const setStructured = (partsPath, prosePath, parts, nextValues) => {
-    setField(partsPath, nextValues);
-    setField(prosePath, composeParts(parts, nextValues));
+    applyFields([
+      [partsPath, nextValues],
+      [prosePath, composeParts(parts, nextValues)],
+    ]);
   };
 
   const appendTo = (path, current, text) => setField(path, current ? `${current} ${text}` : text);
@@ -1124,7 +1150,7 @@ const Day3Page = () => {
         />
       )}
 
-      {/* Simple lightbox for cards */}
+      {/* Card lightbox — close must stay on-screen; off-screen ✕ made zooms feel frozen */}
       {lightbox && (
         <div
           className="fixed inset-0 bg-black/70 z-[1100] flex items-center justify-center p-4"
@@ -1134,21 +1160,27 @@ const Day3Page = () => {
           aria-label="Image viewer"
         >
           <div
-            className="relative max-w-[92vw] max-h-[90vh] w-full flex items-center justify-center"
+            className="relative max-w-[92vw] max-h-[90vh] w-full flex flex-col items-center gap-3"
             onClick={(e) => e.stopPropagation()}
           >
-            <button
-              className="absolute -top-10 right-0 text-white text-xl"
-              onClick={() => setLightbox(null)}
-              aria-label="Close"
-            >
-              ✕
-            </button>
+            <div className="w-full flex items-center justify-between gap-3 text-white">
+              <p className="text-sm opacity-90 truncate">{lightbox.alt || 'Card preview'}</p>
+              <button
+                type="button"
+                className="shrink-0 inline-flex items-center gap-2 rounded-full bg-white text-gray-900 font-semibold text-sm px-4 py-2 shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                onClick={() => setLightbox(null)}
+                aria-label="Close image viewer"
+              >
+                <i className="fa-solid fa-xmark" aria-hidden="true" />
+                Close
+              </button>
+            </div>
             <img
               src={lightbox.src}
               alt={lightbox.alt}
-              className="max-w-full max-h-[85vh] w-auto h-auto object-contain rounded-xl shadow-2xl bg-white"
+              className="max-w-full max-h-[80vh] w-auto h-auto object-contain rounded-xl shadow-2xl bg-white"
             />
+            <p className="text-xs text-white/80">Tap outside the card, press Esc, or use Close</p>
           </div>
         </div>
       )}

@@ -38,16 +38,30 @@ test('student inbox read state persists in the database', async ({ page, request
 
   await loginThroughUI(page);
   await page.goto('/inbox');
-  await page.getByRole('button', { name: new RegExp(`${unread.subject} unread`, 'i') }).click();
 
-  const after = await request.get(`${backendURL}/api/student/inbox/`, {
-    headers: bearer(token),
-  });
-  const afterPayload = await after.json();
-  const persisted = (afterPayload.results || afterPayload).find(
-    (message: { id: number }) => message.id === unread.id,
+  // Wait for the mark-read PATCH before asserting persistence — a bare click
+  // races the follow-up GET and flakes when CI is slow.
+  const markRead = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'PATCH' &&
+      response.url().includes(`/api/student/inbox/${unread.id}/read/`) &&
+      response.ok(),
   );
-  expect(persisted.is_read).toBe(true);
+  await page.getByRole('button', { name: new RegExp(`${unread.subject} unread`, 'i') }).click();
+  await markRead;
+
+  await expect
+    .poll(async () => {
+      const after = await request.get(`${backendURL}/api/student/inbox/`, {
+        headers: bearer(token),
+      });
+      const afterPayload = await after.json();
+      const persisted = (afterPayload.results || afterPayload).find(
+        (message: { id: number }) => message.id === unread.id,
+      );
+      return persisted?.is_read;
+    })
+    .toBe(true);
 
   await page.reload();
   await expect(page.getByRole('button', { name: new RegExp(`${unread.subject} unread`, 'i') })).toHaveCount(0);

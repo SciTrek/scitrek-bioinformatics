@@ -204,11 +204,16 @@ const Day5Page = () => {
   };
 
   // lightweight nested setter with autosave debounce
-  const setField = (path, value) => {
+  const applyFields = (mutations) => {
     setAnswersData((prev) => {
-      const clone = structuredClone(prev);
-      // eslint-disable-next-line no-new-func
-      new Function('obj', 'value', `obj.${path} = value;`)(clone, value);
+      const clone =
+        typeof structuredClone === 'function'
+          ? structuredClone(prev)
+          : JSON.parse(JSON.stringify(prev));
+      mutations.forEach(([path, value]) => {
+        // eslint-disable-next-line no-new-func
+        new Function('obj', 'value', `obj.${path} = value;`)(clone, value);
+      });
       return clone;
     });
     setDirty(true);
@@ -225,6 +230,8 @@ const Day5Page = () => {
     }, 2000);
   };
 
+  const setField = (path, value) => applyFields([[path, value]]);
+
   useEffect(() => {
     return () => {
       if (debounceRef.current) clearTimeout(debounceRef.current);
@@ -232,8 +239,10 @@ const Day5Page = () => {
   }, []);
 
   const setStructured = (partsPath, prosePath, parts, nextValues) => {
-    setField(partsPath, nextValues);
-    setField(prosePath, composeParts(parts, nextValues));
+    applyFields([
+      [partsPath, nextValues],
+      [prosePath, composeParts(parts, nextValues)],
+    ]);
   };
 
   const appendTo = (path, current, text) => setField(path, current ? `${current} ${text}` : text);
