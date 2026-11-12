@@ -6,11 +6,24 @@ import { loginThroughUI } from './helpers';
 // Third-party embeds (YouTube, PhET, Human Protein Atlas, Utah Genetics) ship
 // their own markup and their own violations. They are required curriculum
 // content, so scan around them rather than failing on someone else's player.
-const THIRD_PARTY_EMBEDS = 'iframe[src*="youtube"], iframe[src*="phet"], iframe[src*="proteinatlas"], iframe[src*="utah.edu"]';
+const THIRD_PARTY_EMBEDS = [
+  'iframe[src*="youtube"]',
+  'iframe[src*="youtu.be"]',
+  'iframe[src*="phet"]',
+  'iframe[src*="proteinatlas"]',
+  'iframe[src*="utah.edu"]',
+  // Our Day page wrappers around those players (axe can flag YouTube's
+  // #movie_player aria-label through the iframe / wrapper path).
+  '.aspect-video',
+];
 
 async function expectNoSeriousViolations(page: Page, excludeEmbeds = false) {
   let builder = new AxeBuilder({ page });
-  if (excludeEmbeds) builder = builder.exclude(THIRD_PARTY_EMBEDS);
+  if (excludeEmbeds) {
+    for (const selector of THIRD_PARTY_EMBEDS) {
+      builder = builder.exclude(selector);
+    }
+  }
   const results = await builder.analyze();
   const serious = results.violations.filter(violation =>
     ['serious', 'critical'].includes(violation.impact || ''),
@@ -30,7 +43,9 @@ test('core authenticated student pages have no serious automated accessibility v
   for (const path of ['/inbox', '/sections/day-1', '/workbooks']) {
     await page.goto(path);
     await expect(page.locator('body')).not.toContainText('Loading…');
-    await expectNoSeriousViolations(page);
+    // Day pages embed YouTube/PhET/etc.; exclude those third-party players the
+    // same way the dedicated day-page a11y test does.
+    await expectNoSeriousViolations(page, path.includes('/sections/day-'));
   }
 });
 
