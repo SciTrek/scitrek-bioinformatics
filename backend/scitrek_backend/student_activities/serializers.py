@@ -40,7 +40,12 @@ class CustomStudentSignupSerializer(serializers.ModelSerializer):
         try:
             validate_password(attrs['password'], user=candidate)
         except DjangoValidationError as exc:
-            raise serializers.ValidationError({'password': list(exc.messages)}) from exc
+            messages = list(exc.messages)
+            messages.append(
+                'Use a longer, less common password '
+                '(example: SciTrek-Classroom-2026!).'
+            )
+            raise serializers.ValidationError({'password': messages}) from exc
         return attrs
 
     @transaction.atomic

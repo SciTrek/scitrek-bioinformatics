@@ -3,6 +3,51 @@ import { guestLogin, loginUser, signupUser } from '../services/api';
 import '../styles/scitrek-ui.css';
 import './LoginPage.css';
 
+const SIGNUP_HINT =
+  'Choose a unique username and a longer password (at least 8 characters, not a common word). Example: username gulistan.tansik / password SciTrek-Classroom-2026!';
+
+const FIELD_LABELS = {
+  username: 'Username',
+  password: 'Password',
+  first_name: 'First name',
+  last_name: 'Last name',
+  classroom_name: 'Classroom name',
+  non_field_errors: '',
+  detail: '',
+};
+
+export const formatSignupError = (err) => {
+  const data = err?.response?.data;
+  if (!data) {
+    return (
+      'Sign up failed. Please check your details and try again. ' +
+      'If your password is short or common (like password or 123456), try something longer such as SciTrek-Classroom-2026!.'
+    );
+  }
+
+  if (typeof data === 'string') {
+    return data;
+  }
+
+  const parts = [];
+  Object.entries(data).forEach(([field, value]) => {
+    const messages = Array.isArray(value) ? value : [value];
+    messages.filter(Boolean).forEach((message) => {
+      const label = FIELD_LABELS[field];
+      parts.push(label ? `${label}: ${message}` : String(message));
+    });
+  });
+
+  if (parts.length) {
+    return parts.join(' ');
+  }
+
+  return (
+    'Sign up failed. Please check your details and try again. ' +
+    'If your password is short or common, try something longer such as SciTrek-Classroom-2026!.'
+  );
+};
+
 const LoginPage = () => {
   // Toggle state: false = Sign In, true = Sign Up
   const [isSignUp, setIsSignUp] = useState(false);
@@ -67,7 +112,7 @@ const LoginPage = () => {
       localStorage.setItem('refreshToken', data.refresh || '');
       window.location.href = '/'; // Reload app after successful signup
     } catch (err) {
-      setError('Sign up failed. Please check your details and try again.');
+      setError(formatSignupError(err));
     }
   };
 
@@ -166,6 +211,7 @@ const LoginPage = () => {
             <p className="login-form-copy">
               Join your classroom and unlock the full bioinformatics workbook.
             </p>
+            <p className="signup-credential-hint">{SIGNUP_HINT}</p>
             <div className="form-field">
               <label htmlFor="signup-username">Username</label>
               <input
@@ -174,6 +220,8 @@ const LoginPage = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                autoComplete="username"
+                placeholder="e.g. gulistan.tansik"
               />
             </div>
             <div className="form-field password-field">
@@ -184,6 +232,8 @@ const LoginPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                autoComplete="new-password"
+                placeholder="e.g. SciTrek-Classroom-2026!"
               />
               <button
                 type="button"

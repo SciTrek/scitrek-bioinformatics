@@ -105,6 +105,8 @@ class SignupSerializerTests(TestCase):
 
         self.assertFalse(serializer.is_valid())
         self.assertIn("password", serializer.errors)
+        joined = " ".join(str(message) for message in serializer.errors["password"])
+        self.assertIn("SciTrek-Classroom-2026!", joined)
 
     def test_signup_rolls_back_user_when_profile_creation_fails(self):
         serializer = CustomStudentSignupSerializer(data={

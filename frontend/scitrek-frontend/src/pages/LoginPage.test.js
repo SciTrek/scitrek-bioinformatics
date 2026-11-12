@@ -1,6 +1,6 @@
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import LoginPage from './LoginPage';
+import LoginPage, { formatSignupError } from './LoginPage';
 import { guestLogin, loginUser, signupUser } from '../services/api';
 
 vi.mock('../services/api', () => ({
@@ -93,6 +93,23 @@ describe('LoginPage', () => {
 
     expect(screen.getByRole('heading', { name: /create your scitrek account/i })).toBeInTheDocument();
     expect(screen.getByLabelText(/confirm password/i)).toBeInTheDocument();
+    expect(screen.getByText(/sciTrek-classroom-2026!/i)).toBeInTheDocument();
+  });
+
+  test('formatSignupError surfaces backend password guidance', () => {
+    const message = formatSignupError({
+      response: {
+        data: {
+          password: [
+            'This password is too common.',
+            'Use a longer, less common password (example: SciTrek-Classroom-2026!).',
+          ],
+        },
+      },
+    });
+
+    expect(message).toMatch(/password: this password is too common/i);
+    expect(message).toMatch(/sciTrek-classroom-2026!/i);
   });
 
   test('sign-up rejects mismatched passwords before API call', async () => {
@@ -149,6 +166,32 @@ describe('LoginPage', () => {
     await userEvent.type(screen.getByLabelText(/last name/i), 'L');
     await submitSignUp();
 
-    expect(await screen.findByText(/sign up failed/i)).toBeInTheDocument();
+    expect(
+      await screen.findByText(/sign up failed.*sciTrek-classroom-2026!/i)
+    ).toBeInTheDocument();
+  });
+
+  test('failed sign-up shows specific backend validation messages', async () => {
+    signupUser.mockRejectedValue({
+      response: {
+        data: {
+          password: [
+            'This password is too common.',
+            'Use a longer, less common password (example: SciTrek-Classroom-2026!).',
+          ],
+        },
+      },
+    });
+    render(<LoginPage />);
+
+    await submitSignUp();
+    await userEvent.type(screen.getByLabelText(/username/i), 'alice');
+    await userEvent.type(screen.getByLabelText(/^password/i), 'password');
+    await userEvent.type(screen.getByLabelText(/confirm password/i), 'password');
+    await userEvent.type(screen.getByLabelText(/first name/i), 'A');
+    await userEvent.type(screen.getByLabelText(/last name/i), 'L');
+    await submitSignUp();
+
+    expect(await screen.findByText(/password: this password is too common/i)).toBeInTheDocument();
   });
 });
