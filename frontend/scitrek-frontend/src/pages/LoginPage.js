@@ -16,8 +16,45 @@ const FIELD_LABELS = {
   detail: '',
 };
 
-export const formatSignupError = (err) => {
+const formatWaitMinutes = (seconds) => {
+  const wholeSeconds = Math.max(0, Math.ceil(Number(seconds) || 0));
+  const minutes = Math.max(1, Math.ceil(wholeSeconds / 60));
+  return minutes === 1 ? 'about 1 minute' : `about ${minutes} minutes`;
+};
+
+const extractThrottleWaitSeconds = (err) => {
   const data = err?.response?.data;
+  const headerWait = err?.response?.headers?.['retry-after'];
+  const candidates = [data?.wait, headerWait];
+
+  if (typeof data?.detail === 'string') {
+    const match = data.detail.match(/available in\s+(\d+)\s+seconds?/i);
+    if (match) {
+      candidates.push(match[1]);
+    }
+  }
+
+  for (const value of candidates) {
+    const seconds = Number(value);
+    if (Number.isFinite(seconds) && seconds >= 0) {
+      return seconds;
+    }
+  }
+  return null;
+};
+
+export const formatSignupError = (err) => {
+  const status = err?.response?.status;
+  const data = err?.response?.data;
+  const waitSeconds = extractThrottleWaitSeconds(err);
+
+  if (status === 429 || (typeof data?.detail === 'string' && /throttled/i.test(data.detail))) {
+    const waitHint = waitSeconds != null
+      ? ` Please wait ${formatWaitMinutes(waitSeconds)}, then try once with a longer password such as SciTrek-Classroom-2026!.`
+      : ' Please wait a bit, then try once with a longer password such as SciTrek-Classroom-2026!.';
+    return `Too many signup attempts from this network.${waitHint}`;
+  }
+
   if (!data) {
     return (
       'Sign up failed. Please check your details and try again. ' +
