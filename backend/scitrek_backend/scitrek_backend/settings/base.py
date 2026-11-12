@@ -180,7 +180,7 @@ REST_FRAMEWORK = {
         'token_refresh': '30/minute',
         # Classroom demos often share a school NAT IP; keep abuse protection
         # without locking out a whole lab after a few weak-password retries.
-        'signup': '30/hour',
+        'signup': '500/hour',
         'guest_login': '10/hour',
     },
 
