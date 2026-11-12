@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SciTrek Bioinformatics — Student Login Guide</title>
+  <style>
+    :root {
+      --ink: #17313a;
+      --muted: #4d646c;
+      --teal: #1f7a8c;
+      --teal-soft: #e8f4f6;
+      --amber: #f2a400;
+      --paper: #fffdf8;
+      --line: #d7e2e6;
+      --ok: #1f6b4a;
+      --warn-bg: #fff6e8;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      background:
+        radial-gradient(circle at top left, rgba(31, 122, 140, 0.12), transparent 28rem),
+        linear-gradient(180deg, #f7fbfd 0%, var(--paper) 40%, #ffffff 100%);
+      color: var(--ink);
+      font-family: "Trebuchet MS", "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+
+    main {
+      max-width: 46rem;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3.5rem;
+    }
+
+    header {
+      border-bottom: 3px solid var(--teal);
+      margin-bottom: 1.75rem;
+      padding-bottom: 1.25rem;
+    }
+
+    .kicker {
+      color: var(--teal);
+      font-size: 0.85rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      margin: 0 0 0.4rem;
+      text-transform: uppercase;
+    }
+
+    h1 {
+      font-size: clamp(1.8rem, 4vw, 2.4rem);
+      line-height: 1.15;
+      margin: 0 0 0.75rem;
+    }
+
+    .lead {
+      color: var(--muted);
+      font-size: 1.05rem;
+      margin: 0;
+    }
+
+    h2 {
+      color: var(--teal);
+      font-size: 1.25rem;
+      margin: 2rem 0 0.75rem;
+    }
+
+    p, li { font-size: 1.02rem; }
+
+    ol, ul { padding-left: 1.25rem; }
+
+    li + li { margin-top: 0.45rem; }
+
+    a { color: var(--teal); font-weight: 700; }
+
+    .card {
+      background: #fff;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      margin: 1rem 0;
+      padding: 1rem 1.1rem;
+    }
+
+    .example {
+      background: var(--teal-soft);
+      border-left: 4px solid var(--teal);
+    }
+
+    .why {
+      background: var(--warn-bg);
+      border-left: 4px solid var(--amber);
+    }
+
+    .ok {
+      color: var(--ok);
+      font-weight: 700;
+    }
+
+    .no {
+      color: #9b2c2c;
+      font-weight: 700;
+    }
+
+    code, .mono {
+      background: #eef3f5;
+      border-radius: 6px;
+      font-family: "Courier New", monospace;
+      font-size: 0.95em;
+      padding: 0.1em 0.35em;
+    }
+
+    .checklist li::marker { content: ""; }
+
+    .checklist {
+      list-style: none;
+      padding-left: 0;
+    }
+
+    .checklist li {
+      align-items: flex-start;
+      display: flex;
+      gap: 0.55rem;
+    }
+
+    .checklist li::before {
+      content: "☐";
+      color: var(--teal);
+      font-size: 1.1rem;
+      line-height: 1.4;
+    }
+
+    footer {
+      border-top: 1px solid var(--line);
+      color: var(--muted);
+      font-size: 0.92rem;
+      margin-top: 2.5rem;
+      padding-top: 1rem;
+    }
+
+    @media print {
+      body { background: #fff; }
+      main { padding: 0; }
+      a { text-decoration: none; }
+      .card { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <p class="kicker">SciTrek Bioinformatics</p>
+      <h1>How to Create Your Account &amp; Log In</h1>
+      <p class="lead">
+        A short guide for students. Please read this before your first class session.
+      </p>
+    </header>
+
+    <section>
+      <h2>1. Open the website</h2>
+      <p>
+        Go to:
+        <a href="https://bioinformatics-mod.sci-trek.org">https://bioinformatics-mod.sci-trek.org</a>
+      </p>
+    </section>
+
+    <section>
+      <h2>2. Create a new account (first time only)</h2>
+      <ol>
+        <li>Click <strong>Sign Up</strong> at the top of the login box.</li>
+        <li>Enter a <strong>username</strong> that is unique to you.</li>
+        <li>Create a <strong>strong password</strong> (see rules below).</li>
+        <li>Type the same password again in <strong>Confirm Password</strong>.</li>
+        <li>Enter your <strong>first name</strong> and <strong>last name</strong>.</li>
+        <li>Enter your <strong>classroom name</strong> exactly as your teacher gives it to you (for example, <span class="mono">1001</span>).</li>
+        <li>Click <strong>Sign Up</strong>.</li>
+      </ol>
+
+      <div class="card example">
+        <p><strong>Example that works:</strong></p>
+        <ul>
+          <li>Username: <span class="mono">jordan.lee25</span></li>
+          <li>Password: <span class="mono">SciTrek-Classroom-2026!</span></li>
+          <li>Classroom: <span class="mono">1001</span> <em>(use the code your teacher gives you)</em></li>
+        </ul>
+        <p>
+          You can invent your own password. The example above is only a model of
+          length and complexity — do not reuse a password you already use for email or school accounts.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>3. Password rules (important)</h2>
+      <p>Your password must be:</p>
+      <ul>
+        <li><strong>At least 8 characters long</strong> (longer is better)</li>
+        <li><strong>Not a common word or easy guess</strong> (avoid <span class="mono">password</span>, <span class="mono">123456</span>, your name, or your birthday)</li>
+        <li><strong>Not only numbers</strong></li>
+      </ul>
+
+      <p class="ok">Good ideas:</p>
+      <ul>
+        <li>Mix uppercase letters, lowercase letters, numbers, and a symbol</li>
+        <li>Use a short phrase you can remember, then add numbers/symbols</li>
+        <li>Write it down somewhere safe if your teacher allows it for class accounts</li>
+      </ul>
+
+      <p class="no">Usually rejected:</p>
+      <ul>
+        <li><span class="mono">password</span>, <span class="mono">abc123</span>, <span class="mono">qwerty</span></li>
+        <li>Your first name or username by itself</li>
+        <li>Very short passwords like <span class="mono">pass</span> or <span class="mono">sci</span></li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>4. Why do we need a longer password?</h2>
+      <div class="card why">
+        <p>
+          SciTrek stores your class work, answers, and progress. A short or common
+          password is easy for automated programs (and curious classmates) to guess.
+        </p>
+        <p>
+          A longer, less common password helps protect:
+        </p>
+        <ul>
+          <li>Your workbook answers and quiz progress</li>
+          <li>Messages and files in your account</li>
+          <li>The fairness of the classroom activity (so someone else cannot pretend to be you)</li>
+        </ul>
+        <p>
+          This is the same idea used for school email and banking apps: longer passwords
+          are much harder to crack, even if someone tries many guesses quickly.
+        </p>
+      </div>
+    </section>
+
+    <section>
+      <h2>5. Log in next time</h2>
+      <ol>
+        <li>Open the same website.</li>
+        <li>Stay on <strong>Sign In</strong> (not Sign Up).</li>
+        <li>Enter the <strong>same username and password</strong> you created.</li>
+        <li>Click <strong>Sign In</strong>.</li>
+      </ol>
+      <p>
+        Tip: If you forget your password, ask your teacher for help. There is no
+        self-serve “forgot password” link yet.
+      </p>
+    </section>
+
+    <section>
+      <h2>6. Quick checklist before class</h2>
+      <ul class="checklist">
+        <li>I can open the SciTrek website</li>
+        <li>I created a unique username</li>
+        <li>My password is long and not a common word</li>
+        <li>I saved or remembered my username and password</li>
+        <li>I know my classroom name/code from my teacher</li>
+        <li>I successfully signed in once before class starts</li>
+      </ul>
+    </section>
+
+    <section>
+      <h2>7. If something goes wrong</h2>
+      <ul>
+        <li>
+          <strong>“Sign up failed” / password error:</strong>
+          Make a longer, less common password and try again.
+        </li>
+        <li>
+          <strong>“Too many signup attempts” / throttled:</strong>
+          Wait about 15–20 minutes, then try <em>one</em> time with a strong password.
+          Many failed tries from the same school network can temporarily pause signup.
+        </li>
+        <li>
+          <strong>Classroom does not exist:</strong>
+          Double-check the classroom name with your teacher (spelling and numbers matter).
+        </li>
+        <li>
+          <strong>Username already taken:</strong>
+          Add numbers or your class period, such as <span class="mono">jordan.lee.p3</span>.
+        </li>
+      </ul>
+    </section>
+
+    <footer>
+      <p>
+        Teacher note: Share this page or print it for students before the first lab.
+        Website: <a href="https://bioinformatics-mod.sci-trek.org">bioinformatics-mod.sci-trek.org</a>
+      </p>
+    </footer>
+  </main>
+</body>
+</html>
