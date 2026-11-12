@@ -217,6 +217,18 @@
   margin: 0 0 1.4rem;
 }
 
+.signup-credential-hint {
+  background: rgba(31, 122, 140, 0.08);
+  border: 1px solid rgba(31, 122, 140, 0.18);
+  border-radius: var(--st-radius-md);
+  color: var(--st-ink);
+  font-size: 0.9rem;
+  font-weight: 650;
+  line-height: 1.5;
+  margin: -0.4rem 0 1.25rem;
+  padding: 0.75rem 0.9rem;
+}
+
 .form-field {
   margin-bottom: 1rem;
   position: relative;
