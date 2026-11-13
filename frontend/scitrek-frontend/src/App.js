@@ -23,6 +23,7 @@ import Day5Page from './pages/Day5Page';
 import Footer from './components/Footer';
 import WorkbookList from './components/WorkbookList';
 import WorkbookPage from './components/WorkbookPage';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import { getCurrentUser } from './services/api';
 import { getAccessToken, removeTokens } from './utils/auth';
@@ -59,6 +60,7 @@ function App() {
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>
       <div className="app-container">
         <div className="content">
+          <ErrorBoundary>
           <Routes>
             <Route
               path="/login"
@@ -129,6 +131,7 @@ function App() {
             {/* Fallback route */}
             <Route path="*" element={<Navigate to={user ? "/" : "/login"} />} />
           </Routes>
+          </ErrorBoundary>
         </div>
         <Footer />
       </div>
