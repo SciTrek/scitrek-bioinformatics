@@ -13,6 +13,7 @@ import {
   StepFlow,
 } from '../components/interactions';
 import { getCurrentUser, getResponseDetail, upsertResponse } from '../services/api';
+import { setPath } from '../utils/setPath';
 
 /* ------------------------------ content data ------------------------------ */
 
@@ -498,8 +499,7 @@ const Day2Page = () => {
           ? structuredClone(prev)
           : JSON.parse(JSON.stringify(prev));
 
-      // eslint-disable-next-line no-new-func
-      new Function('obj', 'value', `obj.${path} = value;`)(clone, value);
+      setPath(clone, path, value);
       Promise.resolve().then(markDirtyAndDebounce);
       return clone;
     });

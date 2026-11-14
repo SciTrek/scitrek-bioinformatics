@@ -14,6 +14,7 @@ import {
   decomposeText,
 } from '../components/interactions';
 import { getCurrentUser, getResponseDetail, upsertResponse } from '../services/api';
+import { setPath } from '../utils/setPath';
 
 const DEFAULT_GENES = [
   { name: 'HK1 (housekeeping)', type: 'housekeeping' },
@@ -484,8 +485,7 @@ const Day3Page = () => {
           ? structuredClone(prev)
           : JSON.parse(JSON.stringify(prev));
       mutations.forEach(([path, value]) => {
-        // eslint-disable-next-line no-new-func
-        new Function('obj', 'value', `obj.${path} = value;`)(clone, value);
+        setPath(clone, path, value);
       });
       return clone;
     });
