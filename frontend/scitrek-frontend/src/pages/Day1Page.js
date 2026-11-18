@@ -14,6 +14,9 @@ import {
   normalizeRank,
 } from '../components/interactions';
 import { getCurrentUser, getResponseDetail, upsertResponse } from '../services/api';
+import AnswerLoadError from '../components/AnswerLoadError';
+import { useAnswerBackup } from '../hooks/useAnswerBackup';
+import { clearAnswerBackup, readAnswerBackup } from '../utils/answerBackup';
 
 // ---- gene expression steps for the ordering task ---------------------------
 const INITIAL_STEPS = [
@@ -101,6 +104,11 @@ const Day1Page = () => {
   // --- AUTOSAVE state -------------------------------------------------------
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  // Refs avoid stale closures in the debounce/interval callbacks.
+  const savingRef = useRef(false);
+  const loadFailedRef = useRef(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const debounceRef = useRef(null);
   const intervalRef = useRef(null);
@@ -217,12 +225,20 @@ const Day1Page = () => {
         setUser(u);
 
         let data = null;
+        let serverLoadFailed = false;
         try {
           data = await getResponseDetail(moduleId);
-        } catch {
-          // treat missing saved data as empty answers
+        } catch (err) {
+          // A 404 means "no previous answers". Anything else means we could not
+          // read them, and editing a blank form would overwrite saved work.
+          if (err?.response?.status !== 404) serverLoadFailed = true;
         }
         if (!isMounted) return;
+        if (serverLoadFailed) {
+          loadFailedRef.current = true;
+          setLoadFailed(true);
+          return;
+        }
 
         if (data?.answers) {
           const payload = data.answers.answers || data.answers;
@@ -231,6 +247,19 @@ const Day1Page = () => {
           setLastSavedAt(new Date());
         } else {
           normalizeAnswers(null);
+        }
+
+        // Restore edits that never reached the server (e.g. the session ended first).
+        const backup = readAnswerBackup(u.username || u.id, moduleId);
+        if (backup) {
+          setAnswersData((prev) => ({ ...prev, ...backup }));
+          setDirty(true);
+        }
+      } catch {
+        // Could not even identify the user (a 401 already redirects to login).
+        if (isMounted) {
+          loadFailedRef.current = true;
+          setLoadFailed(true);
         }
       } finally {
         if (isMounted) setLoading(false);
@@ -244,29 +273,45 @@ const Day1Page = () => {
 
   // ------- save routine / debouncer -------
   const saveAnswers = async ({ silent = true } = {}) => {
-    if (saving) return;
-
+    if (savingRef.current) return;
+    if (loadFailedRef.current) return; // never overwrite answers we could not read
+    const snapshot = answersDataRef.current;
+    const userKey = user?.username || user?.id;
+    savingRef.current = true;
+    let saved = false;
     try {
       setSaving(true);
-      await upsertResponse(moduleId, answersDataRef.current);
+      await upsertResponse(moduleId, snapshot);
+      saved = true;
       if (!unmountedRef.current) {
-        setDirty(false);
+        setSaveFailed(false);
         setLastSavedAt(new Date());
+        // Only mark clean if nothing changed while the request was in flight.
+        if (answersDataRef.current === snapshot) setDirty(false);
       }
+      if (answersDataRef.current === snapshot) clearAnswerBackup(userKey, moduleId);
       if (!silent) alert('Your work has been saved!');
     } catch (e) {
-      if (!silent) alert('Error saving. Please try again.');
+      if (!unmountedRef.current) setSaveFailed(true);
+      if (!silent) alert('Could not save right now. Your work is backed up on this computer and will keep retrying.');
     } finally {
+      savingRef.current = false;
       if (!unmountedRef.current) setSaving(false);
     }
+    // Edits made during the request still need saving.
+    if (saved && !unmountedRef.current && answersDataRef.current !== snapshot) {
+      saveAnswers({ silent: true });
+    }
   };
+
+  useAnswerBackup(user?.username || user?.id, moduleId, answersData, dirty);
 
   const markDirtyAndDebounce = () => {
     setDirty(true);
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setDirty((currentDirty) => {
-        if (currentDirty && !saving) {
+        if (currentDirty) {
           saveAnswers({ silent: true });
         }
         return currentDirty;
@@ -366,6 +411,7 @@ const Day1Page = () => {
   if (loading) {
     return <div className="flex items-center justify-center h-screen">Loading…</div>;
   }
+  if (loadFailed) return <AnswerLoadError onRetry={() => window.location.reload()} />;
 
   // Sized by aspect ratio rather than a fixed height, so the same element is
   // large on the stage and small in the corner dock without ever remounting.
@@ -440,6 +486,11 @@ const Day1Page = () => {
               ? `Saved • ${lastSavedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
               : 'Ready'}
           {dirty && !saving ? <span className="ml-2 text-amber-600">(unsaved)</span> : null}
+          {saveFailed ? (
+            <span className="ml-2 text-red-600">
+              Not saved yet &ndash; retrying. Your work is backed up on this computer.
+            </span>
+          ) : null}
         </div>
       </div>
 

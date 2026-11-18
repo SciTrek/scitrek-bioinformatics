@@ -679,3 +679,42 @@ class SensitiveEndpointThrottleTests(APITestCase):
 
         self.assertEqual(first.status_code, 201)
         self.assertEqual(second.status_code, 429)
+
+
+class SessionLongevityTests(APITestCase):
+    """A student session must outlast a 9-hour school day."""
+
+    def test_token_lifetimes_cover_a_nine_hour_school_day(self):
+        self.assertGreaterEqual(settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'], timedelta(hours=9))
+        self.assertGreater(
+            settings.SIMPLE_JWT['REFRESH_TOKEN_LIFETIME'],
+            settings.SIMPLE_JWT['ACCESS_TOKEN_LIFETIME'],
+        )
+
+    def test_login_throttle_absorbs_a_class_logging_in_together(self):
+        rate = settings.REST_FRAMEWORK['DEFAULT_THROTTLE_RATES']['token_obtain']
+        count, period = rate.split('/')
+        self.assertEqual(period, 'minute')
+        self.assertGreaterEqual(int(count), 120)
+
+    def test_inbox_seeding_failure_does_not_block_a_valid_login(self):
+        teacher = User.objects.create_user('seed-teacher', password='x', is_teacher=True)
+        classroom = Classroom.objects.create(name='2001', teacher=teacher)
+        student = User.objects.create_user(
+            'seed-student', password='Student-Pass!2026', is_student=True
+        )
+        Student.objects.create(user=student, classroom=classroom, first_name='S', last_name='S')
+
+        with patch(
+            'student_activities.auth_views.seed_inbox_for_user_now',
+            side_effect=RuntimeError('db hiccup'),
+        ):
+            with self.assertLogs('student_activities.auth_views', level='ERROR'):
+                response = self.client.post(
+                    reverse('token_obtain_pair'),
+                    {'username': 'seed-student', 'password': 'Student-Pass!2026'},
+                    format='json',
+                )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('access', response.data)

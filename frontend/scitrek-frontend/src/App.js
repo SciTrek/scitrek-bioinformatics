@@ -29,32 +29,69 @@ import { getCurrentUser } from './services/api';
 import { getAccessToken, removeTokens } from './utils/auth';
 import './App.css';
 
+const STARTUP_ATTEMPTS = 3;
+const STARTUP_RETRY_MS = 1500;
+
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
     async function fetchUser() {
       const token = getAccessToken();
       if (!token) {
         setLoading(false);
         return;
       }
-      try {
-        const userData = await getCurrentUser();
-        setUser(userData);
-      } catch (err) {
-        console.error(err);
-        removeTokens();
-        setUser(null);
-      } finally {
+      for (let attempt = 0; attempt < STARTUP_ATTEMPTS; attempt += 1) {
+        try {
+          const userData = await getCurrentUser();
+          if (!cancelled) {
+            setUser(userData);
+            setLoading(false);
+          }
+          return;
+        } catch (err) {
+          console.error(err);
+          const status = err?.response?.status;
+          if (status === 401 || status === 403 || status === 404) {
+            // The server answered and rejected this login: the session is over.
+            removeTokens();
+            if (!cancelled) {
+              setUser(null);
+              setLoading(false);
+            }
+            return;
+          }
+          // Rate limit, server error or dropped connection: keep the session and retry.
+          if (attempt < STARTUP_ATTEMPTS - 1) {
+            await new Promise(resolve => setTimeout(resolve, STARTUP_RETRY_MS * (attempt + 1)));
+          }
+        }
+      }
+      if (!cancelled) {
+        setLoadError(true);
         setLoading(false);
       }
     }
     fetchUser();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   if (loading) return <div>Loading&hellip;</div>;
+  if (loadError) {
+    return (
+      <div role="alert" style={{ padding: '4rem 1rem', textAlign: 'center' }}>
+        <h1>We couldn&rsquo;t reach SciTrek</h1>
+        <p>Your work is safe and you are still signed in. Check your connection and try again.</p>
+        <button type="button" onClick={() => window.location.reload()}>Try again</button>
+      </div>
+    );
+  }
 
   return (
     <Router future={{ v7_startTransition: true, v7_relativeSplatPath: true }}>

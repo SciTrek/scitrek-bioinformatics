@@ -14,7 +14,63 @@ api.interceptors.request.use(
   error => Promise.reject(error)
 );
 
-// Refresh token flow on 401 responses
+// --- Refresh token flow on 401 responses -----------------------------------
+//
+// An expired access token is renewed with the refresh token. A *transient*
+// refresh failure (rate limit, server error, dropped connection) must never end
+// the session: the student is mid-activity, so we retry with backoff and leave
+// their tokens alone. Only a refresh token the server actually rejects (401)
+// means the session is over.
+const REFRESH_RETRY_DELAYS_MS = [1000, 3000, 8000];
+const MAX_RETRY_AFTER_MS = 15000;
+
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+const isTransientError = err => {
+  const status = err?.response?.status;
+  return !status || status === 429 || status >= 500;
+};
+
+const retryDelayMs = (err, fallbackMs) => {
+  const retryAfter = Number(err?.response?.headers?.['retry-after']);
+  return Number.isFinite(retryAfter) && retryAfter > 0
+    ? Math.min(retryAfter * 1000, MAX_RETRY_AFTER_MS)
+    : fallbackMs;
+};
+
+async function refreshAccessToken(refresh) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      const { data } = await axios.post(`${API_BASE_URL}/api/token/refresh/`, { refresh });
+      localStorage.setItem('accessToken', data.access);
+      if (data.refresh) localStorage.setItem('refreshToken', data.refresh);
+      return data.access;
+    } catch (err) {
+      if (!isTransientError(err) || attempt >= REFRESH_RETRY_DELAYS_MS.length) throw err;
+      await sleep(retryDelayMs(err, REFRESH_RETRY_DELAYS_MS[attempt]));
+    }
+  }
+}
+
+// Requests that 401 together share one refresh instead of each issuing their own.
+let refreshInFlight = null;
+const refreshOnce = refresh => {
+  if (!refreshInFlight) {
+    refreshInFlight = refreshAccessToken(refresh).finally(() => {
+      refreshInFlight = null;
+    });
+  }
+  return refreshInFlight;
+};
+
+const endSession = () => {
+  removeTokens();
+  // Answers are backed up locally, so skip the "Leave site?" prompt that would
+  // otherwise trap the student on a page that can no longer save.
+  window.addEventListener('beforeunload', event => event.stopImmediatePropagation(), true);
+  window.location.href = '/login';
+};
+
 api.interceptors.response.use(
   response => response,
   async error => {
@@ -22,23 +78,17 @@ api.interceptors.response.use(
     if (error.response?.status === 401 && originalRequest && !originalRequest._retry) {
       originalRequest._retry = true;
       const refresh = getRefreshToken();
-      if (refresh) {
-        try {
-          const { data } = await axios.post(
-            `${API_BASE_URL}/api/token/refresh/`,
-            { refresh }
-          );
-          localStorage.setItem('accessToken', data.access);
-          originalRequest.headers.Authorization = `Bearer ${data.access}`;
-          return api(originalRequest);
-        } catch (e) {
-          removeTokens();
-          window.location.href = '/login';
-          return Promise.reject(e);
-        }
-      } else {
-        removeTokens();
-        window.location.href = '/login';
+      if (!refresh) {
+        endSession();
+        return Promise.reject(error);
+      }
+      try {
+        const access = await refreshOnce(refresh);
+        originalRequest.headers.Authorization = `Bearer ${access}`;
+        return api(originalRequest);
+      } catch (refreshError) {
+        if (!isTransientError(refreshError)) endSession();
+        return Promise.reject(refreshError);
       }
     }
     return Promise.reject(error);

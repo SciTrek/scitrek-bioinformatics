@@ -53,8 +53,43 @@ describe('LoginPage', () => {
     expect(window.location.href).toBe('/');
   });
 
+  test('sign-in trims stray whitespace around the username', async () => {
+    loginUser.mockResolvedValue({ access: 'a', refresh: 'r' });
+    render(<LoginPage />);
+
+    await userEvent.type(screen.getByLabelText(/username/i), '  P1G1Alice ');
+    await userEvent.type(screen.getByLabelText(/password/i), 'pw');
+    await submitSignIn();
+
+    await waitFor(() => expect(loginUser).toHaveBeenCalledWith('P1G1Alice', 'pw'));
+  });
+
+  test('a throttled sign-in says so instead of blaming the password', async () => {
+    loginUser.mockRejectedValue({ response: { status: 429, data: { detail: 'Request was throttled.' } } });
+    render(<LoginPage />);
+
+    await userEvent.type(screen.getByLabelText(/username/i), 'alice');
+    await userEvent.type(screen.getByLabelText(/password/i), 'right');
+    await submitSignIn();
+
+    expect(await screen.findByText(/username and password are fine/i)).toBeInTheDocument();
+    expect(screen.queryByText(/invalid credentials/i)).not.toBeInTheDocument();
+  });
+
+  test('an unreachable server says so instead of blaming the password', async () => {
+    loginUser.mockRejectedValue(new Error('Network Error'));
+    render(<LoginPage />);
+
+    await userEvent.type(screen.getByLabelText(/username/i), 'alice');
+    await userEvent.type(screen.getByLabelText(/password/i), 'right');
+    await submitSignIn();
+
+    expect(await screen.findByText(/couldn't reach scitrek/i)).toBeInTheDocument();
+    expect(screen.queryByText(/invalid credentials/i)).not.toBeInTheDocument();
+  });
+
   test('failed sign-in shows error and does not store tokens', async () => {
-    loginUser.mockRejectedValue(new Error('bad credentials'));
+    loginUser.mockRejectedValue({ response: { status: 401, data: { detail: 'No active account' } } });
     render(<LoginPage />);
 
     await userEvent.type(screen.getByLabelText(/username/i), 'alice');
