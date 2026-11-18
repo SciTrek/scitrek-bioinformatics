@@ -14,6 +14,9 @@ import {
 } from '../components/interactions';
 import { getCurrentUser, getResponseDetail, upsertResponse } from '../services/api';
 import { setPath } from '../utils/setPath';
+import AnswerLoadError from '../components/AnswerLoadError';
+import { useAnswerBackup } from '../hooks/useAnswerBackup';
+import { clearAnswerBackup, readAnswerBackup } from '../utils/answerBackup';
 
 const TEMPLATE_URL =
   'https://docs.google.com/presentation/d/1v-u2kytUM2MXvtG2qnFLdON0U4pX2Ey0y1cVEgj6zFY/edit?usp=sharing';
@@ -68,6 +71,11 @@ const Day5Page = () => {
   // --- autosave state ---
   const [dirty, setDirty] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
+  const [loadFailed, setLoadFailed] = useState(false);
+  // Refs avoid stale closures in the debounce/interval callbacks.
+  const savingRef = useRef(false);
+  const loadFailedRef = useRef(false);
   const [lastSavedAt, setLastSavedAt] = useState(null);
   const debounceRef = useRef(null);
   const intervalRef = useRef(null);
@@ -104,12 +112,20 @@ const Day5Page = () => {
         setUser(u);
 
         let data = null;
+        let serverLoadFailed = false;
         try {
           data = await getResponseDetail(moduleId);
-        } catch {
-          // treat 404 as no previous answers
+        } catch (err) {
+          // A 404 means "no previous answers". Anything else means we could not
+          // read them, and editing a blank form would overwrite saved work.
+          if (err?.response?.status !== 404) serverLoadFailed = true;
         }
         if (!isMounted) return;
+        if (serverLoadFailed) {
+          loadFailedRef.current = true;
+          setLoadFailed(true);
+          return;
+        }
 
         if (data?.answers) {
           const payload = data.answers.answers || data.answers;
@@ -131,6 +147,19 @@ const Day5Page = () => {
           setDirty(false);
           setLastSavedAt(new Date());
         }
+
+        // Restore edits that never reached the server (e.g. the session ended first).
+        const backup = readAnswerBackup(u.username || u.id, moduleId);
+        if (backup) {
+          setAnswersData(prev => ({ ...prev, ...backup }));
+          setDirty(true);
+        }
+      } catch {
+        // Could not even identify the user (a 401 already redirects to login).
+        if (isMounted) {
+          loadFailedRef.current = true;
+          setLoadFailed(true);
+        }
       } finally {
         if (isMounted) setLoading(false);
       }
@@ -140,19 +169,36 @@ const Day5Page = () => {
 
   // ------- helpers -------
   const saveAnswers = async ({ silent = true } = {}) => {
-    if (saving) return;
+    if (savingRef.current) return;
+    if (loadFailedRef.current) return; // never overwrite answers we could not read
+    const snapshot = answersDataRef.current;
+    const userKey = user?.username || user?.id;
+    savingRef.current = true;
+    let saved = false;
     try {
       setSaving(true);
-      await upsertResponse(moduleId, answersDataRef.current);
-      setDirty(false);
+      await upsertResponse(moduleId, snapshot);
+      saved = true;
+      setSaveFailed(false);
       setLastSavedAt(new Date());
+      // Only mark clean if nothing changed while the request was in flight.
+      if (answersDataRef.current === snapshot) {
+        setDirty(false);
+        clearAnswerBackup(userKey, moduleId);
+      }
       if (!silent) alert('Your work has been saved!');
     } catch (e) {
-      if (!silent) alert('Error saving. Please try again.');
+      setSaveFailed(true);
+      if (!silent) alert('Could not save right now. Your work is backed up on this computer and will keep retrying.');
     } finally {
+      savingRef.current = false;
       setSaving(false);
     }
+    // Edits made during the request still need saving.
+    if (saved && answersDataRef.current !== snapshot) saveAnswers({ silent: true });
   };
+
+  useAnswerBackup(user?.username || user?.id, moduleId, answersData, dirty);
 
   // periodic autosave while dirty
   useEffect(() => {
@@ -222,7 +268,7 @@ const Day5Page = () => {
     if (debounceRef.current) clearTimeout(debounceRef.current);
     debounceRef.current = setTimeout(() => {
       setDirty((currentDirty) => {
-        if (currentDirty && !saving) {
+        if (currentDirty) {
           saveAnswers({ silent: true });
         }
         return currentDirty;
@@ -248,6 +294,7 @@ const Day5Page = () => {
   const appendTo = (path, current, text) => setField(path, current ? `${current} ${text}` : text);
 
   if (loading) return <div className="flex items-center justify-center h-screen">Loading…</div>;
+  if (loadFailed) return <AnswerLoadError onRetry={() => window.location.reload()} />;
 
   const a = answersData;
   const resultsCarry = Object.keys(a.step5.resultsSummaryParts || {}).length
@@ -600,6 +647,11 @@ const Day5Page = () => {
               ? `Saved • ${lastSavedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}`
               : 'Ready'}
           {dirty && !saving ? <span className="ml-2 text-amber-600">(unsaved)</span> : null}
+          {saveFailed ? (
+            <span className="ml-2 text-red-600">
+              Not saved yet &ndash; retrying. Your work is backed up on this computer.
+            </span>
+          ) : null}
         </div>
       </div>
 

@@ -80,17 +80,82 @@ describe('API client', () => {
     expect(result).toEqual({ data: 'retried' });
   });
 
-  test('response interceptor clears tokens when refresh fails', async () => {
+  test('response interceptor ends the session only when the refresh token is rejected', async () => {
     localStorage.setItem('accessToken', 'old');
     localStorage.setItem('refreshToken', 'refresh');
-    mocks.axios.post.mockRejectedValue(new Error('bad refresh'));
+    const rejected = Object.assign(new Error('bad refresh'), { response: { status: 401 } });
+    mocks.axios.post.mockRejectedValue(rejected);
 
     await expect(
       mocks.state.responseRejected({ response: { status: 401 }, config: { headers: {} } })
-    ).rejects.toThrow('bad refresh');
+    ).rejects.toBe(rejected);
 
+    expect(mocks.axios.post).toHaveBeenCalledTimes(1);
     expect(localStorage.getItem('accessToken')).toBeNull();
     expect(localStorage.getItem('refreshToken')).toBeNull();
+  });
+
+  test('transient refresh failures are retried and keep the session', async () => {
+    vi.useFakeTimers();
+    try {
+      localStorage.setItem('accessToken', 'old');
+      localStorage.setItem('refreshToken', 'refresh');
+      mocks.axios.post
+        .mockRejectedValueOnce(Object.assign(new Error('throttled'), { response: { status: 429, headers: {} } }))
+        .mockRejectedValueOnce(new Error('network down'))
+        .mockResolvedValueOnce({ data: { access: 'fresh' } });
+      mocks.client.mockResolvedValue({ data: 'retried' });
+
+      const pending = mocks.state.responseRejected({
+        response: { status: 401 },
+        config: { headers: {} },
+      });
+      await vi.advanceTimersByTimeAsync(10000);
+
+      await expect(pending).resolves.toEqual({ data: 'retried' });
+      expect(mocks.axios.post).toHaveBeenCalledTimes(3);
+      expect(localStorage.getItem('accessToken')).toBe('fresh');
+      expect(localStorage.getItem('refreshToken')).toBe('refresh');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('a refresh that keeps failing transiently never wipes the tokens', async () => {
+    vi.useFakeTimers();
+    try {
+      localStorage.setItem('accessToken', 'old');
+      localStorage.setItem('refreshToken', 'refresh');
+      const down = Object.assign(new Error('503'), { response: { status: 503, headers: {} } });
+      mocks.axios.post.mockRejectedValue(down);
+
+      const pending = mocks.state.responseRejected({
+        response: { status: 401 },
+        config: { headers: {} },
+      });
+      const settled = expect(pending).rejects.toBe(down);
+      await vi.advanceTimersByTimeAsync(30000);
+      await settled;
+
+      expect(localStorage.getItem('accessToken')).toBe('old');
+      expect(localStorage.getItem('refreshToken')).toBe('refresh');
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  test('requests that 401 together share a single refresh call', async () => {
+    localStorage.setItem('refreshToken', 'refresh');
+    mocks.axios.post.mockResolvedValue({ data: { access: 'shared' } });
+    mocks.client.mockResolvedValue({ data: 'ok' });
+
+    await Promise.all([
+      mocks.state.responseRejected({ response: { status: 401 }, config: { headers: {} } }),
+      mocks.state.responseRejected({ response: { status: 401 }, config: { headers: {} } }),
+      mocks.state.responseRejected({ response: { status: 401 }, config: { headers: {} } }),
+    ]);
+
+    expect(mocks.axios.post).toHaveBeenCalledTimes(1);
   });
 
   test('response interceptor does not crash when 401 has no original config', async () => {

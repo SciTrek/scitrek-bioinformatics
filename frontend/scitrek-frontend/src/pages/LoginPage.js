@@ -43,6 +43,22 @@ const extractThrottleWaitSeconds = (err) => {
   return null;
 };
 
+// Sign-in failures are not all "wrong password": a throttled or unreachable
+// server must not make students doubt (and retype, and re-register) a correct
+// username and password.
+export const formatSignInError = (err) => {
+  const status = err?.response?.status;
+  if (status === 429) {
+    const waitSeconds = extractThrottleWaitSeconds(err);
+    const wait = waitSeconds != null ? ` Please wait ${formatWaitMinutes(waitSeconds)} and try again.` : ' Please wait a minute and try again.';
+    return `Too many people are signing in right now. Your username and password are fine.${wait}`;
+  }
+  if (!status || status >= 500) {
+    return "We couldn't reach SciTrek just now. Check your connection and try again; your username and password are fine.";
+  }
+  return 'Invalid credentials. Please try again.';
+};
+
 export const formatSignupError = (err) => {
   const status = err?.response?.status;
   const data = err?.response?.data;
@@ -107,13 +123,14 @@ const LoginPage = () => {
   // Sign in handler
   const handleSignIn = async (e) => {
     e.preventDefault();
+    setError('');
     try {
-      const data = await loginUser(username, password);
+      const data = await loginUser(username.trim(), password);
       localStorage.setItem('accessToken', data.access);
       localStorage.setItem('refreshToken', data.refresh);
       window.location.href = '/'; // Reload app after successful login
     } catch (err) {
-      setError('Invalid credentials. Please try again.');
+      setError(formatSignInError(err));
     }
   };
 
@@ -138,7 +155,7 @@ const LoginPage = () => {
     }
     try {
       const userData = {
-        username,
+        username: username.trim(),
         password,
         first_name: firstName,     // send snake_case to backend
         last_name: lastName,       // send snake_case to backend
@@ -209,6 +226,10 @@ const LoginPage = () => {
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
                 required
+                autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
               />
             </div>
             <div className="form-field password-field">
@@ -258,6 +279,9 @@ const LoginPage = () => {
                 onChange={(e) => setUsername(e.target.value)}
                 required
                 autoComplete="username"
+                autoCapitalize="none"
+                autoCorrect="off"
+                spellCheck={false}
                 placeholder="e.g. gulistan.tansik"
               />
             </div>
