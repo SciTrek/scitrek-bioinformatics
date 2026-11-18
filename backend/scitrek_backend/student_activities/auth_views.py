@@ -1,4 +1,6 @@
 # student_activities/auth_views.py
+import logging
+
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -7,6 +9,8 @@ from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework.throttling import ScopedRateThrottle
 
 from student_activities.tasks import seed_inbox_for_user_now
+
+logger = logging.getLogger(__name__)
 
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     """
@@ -32,8 +36,13 @@ class MyTokenObtainPairView(TokenObtainPairView):
         user = getattr(serializer, "_authed_user", None)
 
         # Idempotent: safe every login, and keeps inbox seeding independent of Celery.
+        # A seeding failure must never block a valid login, so it is logged
+        # and skipped; the inbox is re-seeded on the next login.
         if user and getattr(user, "is_active", False) and getattr(user, "is_student", False):
-            seed_inbox_for_user_now(user.id)
+            try:
+                seed_inbox_for_user_now(user.id)
+            except Exception:
+                logger.exception("Inbox seeding failed for user %s", user.id)
 
         return Response(tokens, status=status.HTTP_200_OK)
 

@@ -12,6 +12,7 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
 
+from datetime import timedelta
 from pathlib import Path
 import os
 from django.core.exceptions import ImproperlyConfigured
@@ -172,12 +173,17 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        'user':     '1000/day',
+        # A student working a full school day makes many page-load requests;
+        # keep the per-user cap well above that.
+        'user':     '10000/day',
         'anon':     '100/day',
         'response': '30/minute',   # scoped to ResponseUpsert
         'quiz':     '20/minute',   # scoped to QuizAttemptUpsert
-        'token_obtain': '10/minute',
-        'token_refresh': '30/minute',
+        # Whole classrooms (and, if a proxy hides client IPs, whole
+        # deployments) share one IP, so these must absorb a class logging in
+        # together. Failed logins count toward token_obtain.
+        'token_obtain': '1500/minute',
+        'token_refresh': '3000/minute',
         # Classroom demos often share a school NAT IP; keep abuse protection
         # without locking out a whole lab after a few weak-password retries.
         'signup': '500/hour',
@@ -186,6 +192,14 @@ REST_FRAMEWORK = {
 
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
     'PAGE_SIZE': 10,
+}
+
+# JWT lifetimes. SimpleJWT's defaults (5 min access / 1 day refresh) logged
+# students out in the middle of class activities. A session must comfortably
+# outlast a 9-hour school day without needing a refresh to succeed.
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=env_int('JWT_ACCESS_TOKEN_HOURS', 12)),
+    'REFRESH_TOKEN_LIFETIME': timedelta(days=env_int('JWT_REFRESH_TOKEN_DAYS', 7)),
 }
 
 
